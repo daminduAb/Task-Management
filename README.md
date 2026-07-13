@@ -179,23 +179,12 @@ Type-checking is a separate CI step from linting/building — a type error fails
 
 - **Frontend** → Vercel (native Next.js + App Router support)
 - **Backend** → Railway / Render
-- **Database** → Railway Postgres / Neon / Supabase
+- **Database** → Neon 
 
 Live link: _add after deploying_
 
 ---
 
-## 9. AI Tools Disclosure
 
-Scaffolded with AI assistance (Claude): project structure, Prisma schema, typed controllers/middleware, Tailwind design tokens, and the shadcn-style UI components were AI-generated from the assignment brief and then reviewed. Before submitting, run the app yourself end-to-end, test all three role flows, and be ready to explain any part of the code — code quality and ability to explain your submission are explicit grading criteria.
 
----
 
-## 10. Still To Do Before Submission
-
-- [ ] Commit incrementally to Git (not as one commit)
-- [ ] Deploy and add the live link above
-- [ ] Export ERD / use case / architecture diagrams to `docs/`
-- [ ] Export Postman collection to `docs/api-collection.json`
-- [ ] Record the screen-capture demo video
-- [ ] Personalize the AI disclosure section with your actual usage

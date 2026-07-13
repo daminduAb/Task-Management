@@ -1,6 +1,3 @@
-// Prisma schema - PostgreSQL
-// Run: npx prisma migrate dev --name init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,82 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  password      String
+  role          Role            @default(MEMBER)
+  createdAt     DateTime        @default(now())
+  activityLogs  ActivityLog[]
+  ownedProjects Project[]       @relation("ProjectOwner")
+  memberships   ProjectMember[]
+  assignedTasks Task[]          @relation("TaskAssignee")
+  createdTasks  Task[]          @relation("TaskCreator")
+  comments      TaskComment[]
+}
+
+model Project {
+  id          Int             @id @default(autoincrement())
+  name        String
+  description String?
+  status      ProjectStatus   @default(ACTIVE)
+  ownerId     Int
+  createdAt   DateTime        @default(now())
+  owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  members     ProjectMember[]
+  tasks       Task[]
+}
+
+model ProjectMember {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  joinedAt  DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model Task {
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus    @default(TODO)
+  priority    TaskPriority  @default(MEDIUM)
+  dueDate     DateTime?
+  projectId   Int
+  assignedTo  Int?
+  createdBy   Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  assignee    User?         @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  creator     User          @relation("TaskCreator", fields: [createdBy], references: [id])
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments    TaskComment[]
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  comment   String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  action     String
+  entityType String
+  entityId   Int
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 enum Role {
@@ -32,83 +105,4 @@ enum TaskPriority {
   LOW
   MEDIUM
   HIGH
-}
-
-model User {
-  id            Int             @id @default(autoincrement())
-  name          String
-  email         String          @unique
-  password      String
-  role          Role            @default(MEMBER)
-  createdAt     DateTime        @default(now())
-
-  ownedProjects Project[]       @relation("ProjectOwner")
-  memberships   ProjectMember[]
-  assignedTasks Task[]          @relation("TaskAssignee")
-  createdTasks  Task[]          @relation("TaskCreator")
-  comments      TaskComment[]
-  activityLogs  ActivityLog[]
-}
-
-model Project {
-  id          Int             @id @default(autoincrement())
-  name        String
-  description String?
-  status      ProjectStatus   @default(ACTIVE)
-  ownerId     Int
-  owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id])
-  members     ProjectMember[]
-  tasks       Task[]
-  createdAt   DateTime        @default(now())
-}
-
-// Join table: many-to-many between User and Project
-model ProjectMember {
-  id        Int      @id @default(autoincrement())
-  projectId Int
-  userId    Int
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt  DateTime @default(now())
-
-  @@unique([projectId, userId]) // prevents duplicate membership
-}
-
-model Task {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String?
-  status      TaskStatus    @default(TODO)
-  priority    TaskPriority  @default(MEDIUM)
-  dueDate     DateTime?
-  projectId   Int
-  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  assignedTo  Int?
-  assignee    User?         @relation("TaskAssignee", fields: [assignedTo], references: [id])
-  createdBy   Int
-  creator     User          @relation("TaskCreator", fields: [createdBy], references: [id])
-  comments    TaskComment[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
-
-model TaskComment {
-  id        Int      @id @default(autoincrement())
-  taskId    Int
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  comment   String
-  createdAt DateTime @default(now())
-}
-
-// Bonus feature: audit trail, good for "additional relevant features" scoring
-model ActivityLog {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
-  action     String   // e.g. "CREATED_TASK", "UPDATED_STATUS"
-  entityType String   // e.g. "Task", "Project"
-  entityId   Int
-  createdAt  DateTime @default(now())
 }

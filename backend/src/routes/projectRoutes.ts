@@ -12,22 +12,20 @@ import { getTasksForProject, createTask } from "../controllers/taskController";
 import requireAuth from "../middleware/auth";
 import requireRole from "../middleware/role";
 import { validateBody, schemas } from "../utils/validate";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get("/", getProjects);
-router.post("/", requireRole(["ADMIN", "PM"]), validateBody(schemas.createProject), createProject);
-
-router.get("/:id", getProjectById);
-router.put("/:id", requireRole(["ADMIN", "PM"]), updateProject);
-router.delete("/:id", requireRole(["ADMIN", "PM"]), deleteProject);
-
-router.post("/:id/members", requireRole(["ADMIN", "PM"]), validateBody(schemas.addMember), addMember);
-router.delete("/:id/members/:userId", requireRole(["ADMIN", "PM"]), removeMember);
-
-router.get("/:projectId/tasks", getTasksForProject);
-router.post("/:projectId/tasks", requireRole(["ADMIN", "PM"]), validateBody(schemas.createTask), createTask);
+router.get("/", asyncHandler(getProjects));
+router.post("/", requireRole(["ADMIN", "PM"]), validateBody(schemas.createProject), asyncHandler(createProject));
+router.get("/:id", asyncHandler(getProjectById));
+router.put("/:id", requireRole(["ADMIN", "PM"]), asyncHandler(updateProject));
+router.delete("/:id", requireRole(["ADMIN", "PM"]), asyncHandler(deleteProject));
+router.post("/:id/members", requireRole(["ADMIN", "PM"]), validateBody(schemas.addMember), asyncHandler(addMember));
+router.delete("/:id/members/:userId", requireRole(["ADMIN", "PM"]), asyncHandler(removeMember));
+router.get("/:projectId/tasks", asyncHandler(getTasksForProject));
+router.post("/:projectId/tasks", requireRole(["ADMIN", "PM"]), validateBody(schemas.createTask), asyncHandler(createTask));
 
 export default router;

@@ -1,14 +1,16 @@
 import { Router } from "express";
-import { getAllUsers, updateUserRole, deleteUser } from "../controllers/userController";
+import { getAllUsers, getBasicUserList, updateUserRole, deleteUser } from "../controllers/userController";
 import requireAuth from "../middleware/auth";
 import requireRole from "../middleware/role";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
-router.use(requireAuth, requireRole(["ADMIN"]));
+router.use(requireAuth);
 
-router.get("/", getAllUsers);
-router.put("/:id/role", updateUserRole);
-router.delete("/:id", deleteUser);
+router.get("/basic", requireRole(["ADMIN", "PM"]), asyncHandler(getBasicUserList));
+router.get("/", requireRole(["ADMIN"]), asyncHandler(getAllUsers));
+router.put("/:id/role", requireRole(["ADMIN"]), asyncHandler(updateUserRole));
+router.delete("/:id", requireRole(["ADMIN"]), asyncHandler(deleteUser));
 
 export default router;

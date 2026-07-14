@@ -97,15 +97,54 @@ export async function updateProject(req: AuthRequest, res: Response) {
 // DELETE /api/projects/:id (owner PM or Admin only)
 export async function deleteProject(req: AuthRequest, res: Response) {
   const projectId = Number(req.params.id);
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
 
-  if (!project) return res.status(404).json({ error: "Project not found" });
-  if (req.user!.role !== "ADMIN" && project.ownerId !== req.user!.id) {
-    return res.status(403).json({ error: "Only the project owner or Admin can delete this project" });
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+  });
+
+  if (!project) {
+    return res.status(404).json({
+      error: "Project not found",
+    });
   }
 
-  await prisma.project.delete({ where: { id: projectId } });
-  res.json({ message: "Project deleted" });
+  if (
+    req.user!.role !== "ADMIN" &&
+    project.ownerId !== req.user!.id
+  ) {
+    return res.status(403).json({
+      error: "Only the project owner or Admin can delete this project",
+    });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Delete project members
+    await tx.projectMember.deleteMany({
+      where: { projectId },
+    });
+
+    // Delete project tasks
+    await tx.task.deleteMany({
+      where: { projectId },
+    });
+
+    // Delete activity logs (if they reference this project)
+    await tx.activityLog.deleteMany({
+      where: {
+        entityType: "Project",
+        entityId: projectId,
+      },
+    });
+
+    // Finally delete the project
+    await tx.project.delete({
+      where: { id: projectId },
+    });
+  });
+
+  return res.json({
+    message: "Project deleted successfully",
+  });
 }
 
 // POST /api/projects/:id/members (owner PM or Admin)

@@ -27,8 +27,19 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack || err);
+
+  if (err.code === "P2003") {
+    return res.status(400).json({ error: "Referenced record does not exist (check the ID you provided)" });
+  }
+  if (err.code === "P2002") {
+    return res.status(409).json({ error: "This record already exists" });
+  }
+  if (err.code === "P2025") {
+    return res.status(404).json({ error: "Record not found" });
+  }
+
   res.status(500).json({ error: "Internal server error" });
 });
 

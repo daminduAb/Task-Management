@@ -38,6 +38,14 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
 
   res.json({ message: "Role updated", user });
 }
+//Get all users
+export async function getBasicUserList(req: AuthRequest, res: Response) {
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  });
+  res.json(users);
+}
 
 // DELETE /api/users/:id (Admin only)
 export async function deleteUser(req: AuthRequest, res: Response) {

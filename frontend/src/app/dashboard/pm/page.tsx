@@ -109,6 +109,7 @@ function PMDashboard() {
   const [loading, setLoading] = useState(true);
   const [allUsers, setAllUsers] = useState<BasicUser[]>([]);
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState("MEDIUM");
 
   async function loadProjects() {
     const res = await api.get("/projects");
@@ -168,16 +169,18 @@ function PMDashboard() {
   }
 
   async function createTask(e: FormEvent) {
-    e.preventDefault();
-    if (!newTaskTitle.trim() || !selectedProject) return;
-    await api.post(`/projects/${selectedProject.id}/tasks`, {
-      title: newTaskTitle,
-      assignedTo: newTaskAssignee ? Number(newTaskAssignee) : undefined,
-    });
-    setNewTaskTitle("");
-    setNewTaskAssignee("");
-    loadTasks(selectedProject.id);
-  }
+  e.preventDefault();
+  if (!newTaskTitle.trim() || !selectedProject) return;
+  await api.post(`/projects/${selectedProject.id}/tasks`, {
+    title: newTaskTitle,
+    assignedTo: newTaskAssignee ? Number(newTaskAssignee) : undefined,
+    priority: newTaskPriority,
+  });
+  setNewTaskTitle("");
+  setNewTaskAssignee("");
+  setNewTaskPriority("MEDIUM");
+  loadTasks(selectedProject.id);
+}
 
   async function addMember(e: FormEvent) {
     e.preventDefault();
@@ -373,20 +376,33 @@ function PMDashboard() {
                       className="h-9 min-w-[10rem] flex-1 text-sm"
                     />
                     <Select
-                      value={newTaskAssignee}
-                      onChange={(e) => setNewTaskAssignee(e.target.value)}
-                      className="h-9 w-36 text-sm"
-                    >
-                      <option value="">Unassigned</option>
-                      {selectedProject.members?.map((m) => (
-                        <option key={m.userId} value={m.userId}>
-                          {m.user?.name}
-                        </option>
-                      ))}
-                    </Select>
-                    <Button type="submit" size="sm">
-                      <Plus className="h-4 w-4" /> Add task
-                    </Button>
+  value={newTaskAssignee}
+  onChange={(e) => setNewTaskAssignee(e.target.value)}
+  className="h-9 w-36 text-sm"
+>
+  <option value="">
+    {selectedProject.members && selectedProject.members.length > 0
+      ? "Unassigned"
+      : "Add a teammate first"}
+  </option>
+  {selectedProject.members?.map((m) => (
+    <option key={m.userId} value={m.userId}>
+      {m.user?.name}
+    </option>
+  ))}
+</Select>
+<Select
+  value={newTaskPriority}
+  onChange={(e) => setNewTaskPriority(e.target.value)}
+  className="h-9 w-28 text-sm"
+>
+  <option value="LOW">Low</option>
+  <option value="MEDIUM">Medium</option>
+  <option value="HIGH">High</option>
+</Select>
+<Button type="submit" size="sm">
+  <Plus className="h-4 w-4" /> Add task
+</Button>
                   </form>
                 </SectionPanel>
 
